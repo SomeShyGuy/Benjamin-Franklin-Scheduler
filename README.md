@@ -113,7 +113,7 @@ App will be available at `http://localhost:5173`
 ## Author
 
 **[Your Name]**
-[Your GitHub profile] | [Your LinkedIn or portfolio — optional]
+SomeShyGuy 
 
 ---
 
