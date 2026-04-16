@@ -9,6 +9,21 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
 const CATEGORIES = ['Work', 'Learning', 'Exercise', 'Meals', 'Rest', 'Personal', 'Reflection']
 
+const STORAGE_KEY = 'bf-scheduler-blocks'
+
+function loadBlocks(): Record<number, TimeBlock> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveBlocks(blocks: Record<number, TimeBlock>) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks))
+}
+
 function formatHour(hour: number): string {
   if (hour === 0) return '12 AM'
   if (hour < 12) return `${hour} AM`
@@ -17,7 +32,7 @@ function formatHour(hour: number): string {
 }
 
 function ScheduleGrid() {
-  const [blocks, setBlocks] = useState<Record<number, TimeBlock>>({})
+  const [blocks, setBlocks] = useState<Record<number, TimeBlock>>(loadBlocks)
   const [editing, setEditing] = useState<number | null>(null)
   const [draft, setDraft] = useState({ label: '', category: CATEGORIES[0] })
 
@@ -29,13 +44,14 @@ function ScheduleGrid() {
 
   function saveSlot() {
     if (editing === null) return
+    const updated = { ...blocks }
     if (draft.label.trim() === '') {
-      const updated = { ...blocks }
       delete updated[editing]
-      setBlocks(updated)
     } else {
-      setBlocks({ ...blocks, [editing]: { label: draft.label.trim(), category: draft.category } })
+      updated[editing] = { label: draft.label.trim(), category: draft.category }
     }
+    setBlocks(updated)
+    saveBlocks(updated)
     setEditing(null)
   }
 
