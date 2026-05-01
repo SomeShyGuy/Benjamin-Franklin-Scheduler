@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface TimeBlock {
   label: string
@@ -35,6 +35,43 @@ function ScheduleGrid() {
   const [blocks, setBlocks] = useState<Record<number, TimeBlock>>(loadBlocks)
   const [editing, setEditing] = useState<number | null>(null)
   const [draft, setDraft] = useState({ label: '', category: CATEGORIES[0] })
+  const [dragState, setDragState] = useState<{ sourceHour: number; toHour: number } | null>(null)
+
+  useEffect(() => {
+    if (!dragState) return
+    const { sourceHour, toHour } = dragState
+
+    function handleMouseUp() {
+      if (toHour > sourceHour) {
+        const sourceBlock = blocks[sourceHour]
+        if (sourceBlock) {
+          const updated = { ...blocks }
+          for (let h = sourceHour + 1; h <= toHour; h++) {
+            updated[h] = { ...sourceBlock }
+          }
+          setBlocks(updated)
+          saveBlocks(updated)
+        }
+      }
+      setDragState(null)
+    }
+
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [dragState, blocks])
+
+  function startDrag(hour: number, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragState({ sourceHour: hour, toHour: hour })
+  }
+
+  function onRowMouseEnter(hour: number) {
+    if (!dragState) return
+    if (hour >= dragState.sourceHour) {
+      setDragState({ ...dragState, toHour: hour })
+    }
+  }
 
   function openSlot(hour: number) {
     const existing = blocks[hour]
@@ -60,7 +97,7 @@ function ScheduleGrid() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
+    <div className={`max-w-2xl mx-auto py-10 px-4${dragState ? ' select-none' : ''}`}>
       <h1 className="text-2xl font-bold text-center text-stone-700 mb-1 tracking-wide uppercase">
         Daily Schedule
       </h1>
@@ -72,14 +109,19 @@ function ScheduleGrid() {
         {HOURS.map((hour) => {
           const block = blocks[hour]
           const isEditing = editing === hour
+          const isDragOver = dragState && hour > dragState.sourceHour && hour <= dragState.toHour
 
           return (
-            <div key={hour} className="flex items-stretch">
+            <div
+              key={hour}
+              className={`flex items-stretch${isDragOver ? ' bg-amber-50' : ''}`}
+              onMouseEnter={() => onRowMouseEnter(hour)}
+            >
               <div className="w-20 shrink-0 flex items-center justify-center text-xs font-semibold text-stone-500 border-r border-stone-300 py-3 bg-[#f0eed4]">
                 {formatHour(hour)}
               </div>
 
-              <div className="flex-1 px-4 py-2 min-h-[48px]">
+              <div className="flex-1 px-4 py-2 min-h-[48px] relative">
                 {isEditing ? (
                   <div className="flex flex-col gap-2 py-1">
                     <input
@@ -111,14 +153,24 @@ function ScheduleGrid() {
                   </div>
                 ) : (
                   <div
-                    onClick={() => openSlot(hour)}
+                    onClick={() => !dragState && openSlot(hour)}
                     className="h-full min-h-[40px] flex items-center cursor-pointer group"
                   >
                     {block ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-stone-700">{block.label}</span>
-                        <span className="text-xs text-stone-400 italic">{block.category}</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-sm text-stone-700">{block.label}</span>
+                          <span className="text-xs text-stone-400 italic">{block.category}</span>
+                        </div>
+                        <div
+                          className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 cursor-grab text-stone-400 hover:text-stone-600 leading-none text-xs"
+                          onMouseDown={(e) => startDrag(hour, e)}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Drag down to fill hours below"
+                        >
+                          ▼
+                        </div>
+                      </>
                     ) : (
                       <span className="text-xs text-stone-300 group-hover:text-stone-400">+ add block</span>
                     )}
