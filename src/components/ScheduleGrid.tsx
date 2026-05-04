@@ -96,6 +96,14 @@ function ScheduleGrid() {
     setEditing(null)
   }
 
+  function clearSlot(hour: number, e: React.MouseEvent) {
+    e.stopPropagation()
+    const updated = { ...blocks }
+    delete updated[hour]
+    setBlocks(updated)
+    saveBlocks(updated)
+  }
+
   return (
     <div className={`max-w-2xl mx-auto py-10 px-4${dragState ? ' select-none' : ''}`}>
       <h1 className="text-2xl font-bold text-center text-stone-700 mb-1 tracking-wide uppercase">
@@ -161,6 +169,13 @@ function ScheduleGrid() {
                         <div className="flex items-center gap-2 flex-1">
                           <span className="text-sm text-stone-700">{block.label}</span>
                           <span className="text-xs text-stone-400 italic">{block.category}</span>
+                        </div>
+                        <div
+                          className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600 leading-none text-xs cursor-pointer"
+                          onClick={(e) => clearSlot(hour, e)}
+                          title="Clear block"
+                        >
+                          ✕
                         </div>
                         <div
                           className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 cursor-grab text-stone-400 hover:text-stone-600 leading-none text-xs"
