@@ -146,6 +146,13 @@ function ScheduleGrid() {
     setNotesEditing(null)
   }
 
+  function clearAll() {
+    setBlocks({})
+    saveBlocks({})
+    setEditing(null)
+    setNotesEditing(null)
+  }
+
   // Precompute group membership for every hour
   const groupOf: Record<number, { start: number; end: number }> = {}
   const processed = new Set<number>()
@@ -184,16 +191,27 @@ function ScheduleGrid() {
   const contentCol = showLeftPanel ? 4 : 2
 
   return (
-    <div className={`max-w-3xl mx-auto py-10 px-4${dragState ? ' select-none' : ''}`}>
-      <h1 className="text-2xl font-bold text-center text-stone-700 mb-1 tracking-wide uppercase">
+    <div id="schedule-root" className={`max-w-3xl mx-auto py-10 px-4${dragState ? ' select-none' : ''}`}>
+      <h1 className="text-2xl font-bold text-center text-stone-700 dark:text-stone-200 mb-1 tracking-wide uppercase">
         Daily Schedule
       </h1>
-      <p className="text-center text-stone-400 text-sm mb-8 italic">
+      <p className="text-center text-stone-400 dark:text-stone-500 text-sm mb-8 italic">
         What good shall I do this day?
       </p>
 
+      {Object.keys(blocks).length > 0 && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={clearAll}
+            className="text-xs text-stone-400 dark:text-stone-500 hover:text-red-400 dark:hover:text-red-400"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       <div
-        className="border border-stone-300 rounded overflow-hidden"
+        className="border border-stone-300 dark:border-stone-600 rounded overflow-hidden"
         style={{ display: 'grid', gridTemplateColumns: gridCols }}
       >
         {/* Note panels — each spans its group's grid rows so it naturally fills that space */}
@@ -215,16 +233,16 @@ function ScheduleGrid() {
                     onKeyDown={e => { if (e.key === 'Escape') closeNotes() }}
                     placeholder="Notes..."
                     rows={Math.max(3, (end - start + 1) * 2)}
-                    className="flex-1 w-full text-xs text-stone-700 bg-[#F9F9E0] border border-stone-300 rounded p-1 resize-none focus:outline-none leading-relaxed"
+                    className="flex-1 w-full text-xs text-stone-700 dark:text-stone-300 bg-[#F9F9E0] dark:bg-[#5C5B5B] border border-stone-300 dark:border-stone-600 rounded p-1 resize-none focus:outline-none leading-relaxed"
                     style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
                   />
                   <div className="flex gap-1 justify-end shrink-0">
-                    <button onClick={closeNotes} className="text-xs text-stone-400 hover:text-stone-600">Cancel</button>
-                    <button onClick={saveNotes} className="text-xs px-2 py-0.5 bg-stone-600 text-white rounded hover:bg-stone-700">Save</button>
+                    <button onClick={closeNotes} className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300">Cancel</button>
+                    <button onClick={saveNotes} className="text-xs px-2 py-0.5 bg-stone-600 dark:bg-stone-500 text-white rounded hover:bg-stone-700 dark:hover:bg-stone-400">Save</button>
                   </div>
                 </>
               ) : groupHasNotes ? (
-                <p className="text-xs text-stone-400 italic leading-relaxed">
+                <p className="text-xs text-stone-400 dark:text-stone-500 italic leading-relaxed">
                   {blocks[start]?.notes}
                 </p>
               ) : null}
@@ -251,7 +269,7 @@ function ScheduleGrid() {
           const groupHasNotes = group !== undefined && !!blocks[groupStart]?.notes
           const showBrace = isEditingThisGroup || groupHasNotes
 
-          const borderTop = hour > 0 ? 'border-t border-stone-300' : ''
+          const borderTop = hour > 0 ? 'border-t border-stone-300 dark:border-stone-600' : ''
 
           const cells = []
 
@@ -264,7 +282,7 @@ function ScheduleGrid() {
                 style={{ gridColumn: 2, gridRow: hour + 1 }}
               >
                 {showBrace && (
-                  <div className={`absolute inset-0 border-l border-stone-300 ${
+                  <div className={`absolute inset-0 border-l border-stone-300 dark:border-stone-600 ${
                     isSingle
                       ? 'border-y rounded-l-lg'
                       : isGroupStart
@@ -276,7 +294,7 @@ function ScheduleGrid() {
                 )}
                 {isMid && showBrace && (
                   <div
-                    className="absolute top-1/2 -translate-y-px border-t border-stone-300"
+                    className="absolute top-1/2 -translate-y-px border-t border-stone-300 dark:border-stone-600"
                     style={{ left: '-0.5rem', width: '0.5rem' }}
                   />
                 )}
@@ -288,7 +306,7 @@ function ScheduleGrid() {
           cells.push(
             <div
               key={`time-${hour}`}
-              className={`flex items-center justify-center text-xs font-semibold text-stone-500 border-r border-stone-300 py-3 bg-[#f0eed4] ${borderTop}`}
+              className={`flex items-center justify-center text-xs font-semibold text-stone-500 dark:text-stone-400 border-r border-stone-300 dark:border-stone-600 py-3 bg-[#f0eed4] dark:bg-[#5C5B5B] ${borderTop}`}
               style={{ gridColumn: timeCol, gridRow: hour + 1 }}
             >
               {formatHour(hour)}
@@ -299,7 +317,7 @@ function ScheduleGrid() {
           cells.push(
             <div
               key={`content-${hour}`}
-              className={`px-4 py-2 min-h-[48px] relative ${isDragOver ? 'bg-amber-50' : ''} ${borderTop}`}
+              className={`px-4 py-2 min-h-[48px] relative ${isDragOver ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${borderTop}`}
               onMouseEnter={() => onRowMouseEnter(hour)}
               style={{ gridColumn: contentCol, gridRow: hour + 1 }}
             >
@@ -312,22 +330,22 @@ function ScheduleGrid() {
                     value={draft.label}
                     onChange={(e) => setDraft({ ...draft, label: e.target.value })}
                     onKeyDown={(e) => { if (e.key === 'Enter') saveSlot(); if (e.key === 'Escape') cancelEdit() }}
-                    className="w-full border border-stone-300 rounded px-2 py-1 text-sm text-stone-700 bg-[#F9F9E0] focus:outline-none focus:border-stone-500"
+                    className="w-full border border-stone-300 dark:border-stone-600 rounded px-2 py-1 text-sm text-stone-700 dark:text-stone-300 bg-[#F9F9E0] dark:bg-[#5C5B5B] focus:outline-none focus:border-stone-500 dark:focus:border-stone-400"
                   />
                   <div className="flex items-center gap-2">
                     <select
                       value={draft.category}
                       onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-                      className="border border-stone-300 rounded px-2 py-1 text-sm text-stone-600 bg-[#F9F9E0] focus:outline-none focus:border-stone-500"
+                      className="border border-stone-300 dark:border-stone-600 rounded px-2 py-1 text-sm text-stone-600 dark:text-stone-400 bg-[#F9F9E0] dark:bg-[#5C5B5B] focus:outline-none focus:border-stone-500 dark:focus:border-stone-400"
                     >
                       {CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
-                    <button onClick={saveSlot} className="text-sm px-3 py-1 bg-stone-600 text-white rounded hover:bg-stone-700">
+                    <button onClick={saveSlot} className="text-sm px-3 py-1 bg-stone-600 dark:bg-stone-500 text-white rounded hover:bg-stone-700 dark:hover:bg-stone-400">
                       Save
                     </button>
-                    <button onClick={cancelEdit} className="text-sm px-3 py-1 text-stone-500 hover:text-stone-700">
+                    <button onClick={cancelEdit} className="text-sm px-3 py-1 text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200">
                       Cancel
                     </button>
                   </div>
@@ -340,11 +358,11 @@ function ScheduleGrid() {
                   {block ? (
                     <>
                       <div className="flex items-center gap-2 flex-1">
-                        <span className="text-sm text-stone-700">{block.label}</span>
-                        <span className="text-xs text-stone-400 italic">{block.category}</span>
+                        <span className="text-sm text-stone-700 dark:text-stone-300">{block.label}</span>
+                        <span className="text-xs text-stone-400 dark:text-stone-500 italic">{block.category}</span>
                       </div>
                       <div
-                        className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600 leading-none text-xs cursor-pointer"
+                        className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 leading-none text-xs cursor-pointer"
                         onClick={(e) => clearSlot(hour, e)}
                         title="Clear block"
                       >
@@ -353,8 +371,8 @@ function ScheduleGrid() {
                       <div
                         className={`absolute top-1/2 -translate-y-1/2 right-2 leading-none text-xs cursor-pointer transition-opacity ${
                           hasNotes
-                            ? 'opacity-50 text-stone-500 hover:opacity-100'
-                            : 'opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600'
+                            ? 'opacity-50 text-stone-500 dark:text-stone-400 hover:opacity-100'
+                            : 'opacity-0 group-hover:opacity-100 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300'
                         }`}
                         onClick={(e) => openNotes(hour, e)}
                         title="Notes"
@@ -362,7 +380,7 @@ function ScheduleGrid() {
                         ≡
                       </div>
                       <div
-                        className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 cursor-grab text-stone-400 hover:text-stone-600 leading-none text-xs"
+                        className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 cursor-grab text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 leading-none text-xs"
                         onMouseDown={(e) => startDrag(hour, e)}
                         onClick={(e) => e.stopPropagation()}
                         title="Drag down to fill hours below"
@@ -371,7 +389,7 @@ function ScheduleGrid() {
                       </div>
                     </>
                   ) : (
-                    <span className="text-xs text-stone-300 group-hover:text-stone-400">+ add block</span>
+                    <span className="text-xs text-stone-300 dark:text-stone-600 group-hover:text-stone-400 dark:group-hover:text-stone-500">+ add block</span>
                   )}
                 </div>
               )}
